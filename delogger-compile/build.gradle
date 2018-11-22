@@ -1,0 +1,26 @@
+apply plugin: "groovy"
+apply plugin: 'com.novoda.bintray-release'
+
+repositories{
+    google()
+    mavenCentral()
+    jcenter()
+}
+
+dependencies{
+    compile 'com.android.tools.build:gradle:3.0.1'
+    compile gradleApi()
+    compile localGroovy()
+    compile 'javassist:javassist:3.12.1.GA'
+    compile 'com.blankj:utilcode:1.22.0'
+}
+
+publish {
+    repoName = 'easoll-android-plugin'
+    userOrg = 'easoll'
+    groupId = 'com.easoll.plugin'
+    artifactId = 'delogger'
+    publishVersion = '1.0.1'
+    desc = 'this is a android plugin to clean log'
+    website = 'https://github.com/easoll'
+}
