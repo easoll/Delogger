@@ -27,3 +27,6 @@ app的build.gradle
 ```
 apply plugin: 'com.easoll.delogger'
 ```
+
+## 原理介绍
+[Android代码清理插件-Delogger](https://easoll.github.io/2018/11/23/Android%E4%BB%A3%E7%A0%81%E6%B8%85%E7%90%86%E6%8F%92%E4%BB%B6-Delogger/)
