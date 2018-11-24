@@ -1,1 +1,2 @@
-include ':app', ':delogger', 'delogger-compile'
+include ':app', ':delogger'
+include 'delogger-compile'

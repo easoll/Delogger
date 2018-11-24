@@ -14,6 +14,16 @@ class DeloggerPluginImp implements Plugin<Project> {
         project.extensions.add("delogger", DeloggerExtension)
 
         project.afterEvaluate({
+            //find the target task name
+//            for(task in project.tasks){
+//                for(inputFile in task.inputs.files){
+//                    if(inputFile.absolutePath.contains("src/main/java")){
+//                        println "================== taskName: " + task.name
+//                    }
+//                }
+//            }
+
+
             DeloggerExtension cleanExtension = project.delogger
 
             if(cleanExtension.prefixList == null ||
@@ -22,13 +32,65 @@ class DeloggerPluginImp implements Plugin<Project> {
             }
 
             def prefixList = cleanExtension.prefixList.split(";")
+            def cleanDirPath = project.buildDir.absolutePath + File.separator + "delogger"
+            def hasDoClean = false
 
             project.android.applicationVariants.all { BaseVariant variant ->
+
                 String variantName = variant.name.capitalize()
 
-                Task compileJavaTask = project.tasks.getByName("compile${variantName}JavaWithJavac")
+                //hook kotlin compile
+                Task compileKotlinTask = project.tasks.getByName("compile${variantName}Kotlin")
+                compileKotlinTask.doFirst {
+//                    def clazz_KotlinCompile = Class.forName("org.jetbrains.kotlin.gradle.tasks.KotlinCompile")  // can not find class by Class.forName
+                    def clazz_KotlinCompile = compileKotlinTask.class.superclass
+                    def field_sourceRootsContainer = clazz_KotlinCompile.getDeclaredField("sourceRootsContainer")
+                    field_sourceRootsContainer.setAccessible(true)
+                    def sourceRootsContainer = field_sourceRootsContainer.get(compileKotlinTask)
+//                    def clazz_FilteringSourceRootsContainer = Class.forName("org.jetbrains.kotlin.gradle.tasks.FilteringSourceRootsContainer")
+                    def clazz_FilteringSourceRootsContainer = sourceRootsContainer.class
+                    def field_mutableSourceRoots = clazz_FilteringSourceRootsContainer.getDeclaredField("mutableSourceRoots")
+                    field_mutableSourceRoots.setAccessible(true)
+                    def mutableSourceRoots = (ArrayList<File>)field_mutableSourceRoots.get(sourceRootsContainer)
+                    def iterator = mutableSourceRoots.iterator()
+                    while (iterator.hasNext()){
+                        def sourceRoot = iterator.next()
+                        if(sourceRoot.absolutePath.endsWith("src/main/java")){
+                            println "============================ kotlin sourceRoot found"
+                            iterator.remove()
+
+                            def cleanDir = new File(cleanDirPath)
+
+                            if(!hasDoClean){
+                                hasDoClean = true
+                                cleanDir.mkdirs()
+                                FileUtils.copyDirectory(sourceRoot, cleanDir)
+                                doClean(cleanDir, prefixList)
+                            }
+
+                            mutableSourceRoots.add(cleanDir)
+                            break
+                        }
+                    }
+
+                    def field_source = SourceTask.class.getDeclaredField("source")
+                    field_source.setAccessible(true)
+                    def source = (List<Object>)field_source.get(compileKotlinTask)
+                    iterator = source.iterator()
+                    while (iterator.hasNext()){
+                        def singleSource = iterator.next()
+                        if(singleSource instanceof File){
+                            if(singleSource.absolutePath.endsWith("src/main/java")){
+                                iterator.remove()
+                                source.add(new File(cleanDirPath))
+                                break
+                            }
+                        }
+                    }
+                }
 
                 //hook javac compile
+                Task compileJavaTask = project.tasks.getByName("compile${variantName}JavaWithJavac")
                 compileJavaTask.doFirst {
                     if(compileJavaTask instanceof AndroidJavaCompile){
                         def androidJavaCompile = (AndroidJavaCompile) compileJavaTask
@@ -42,19 +104,22 @@ class DeloggerPluginImp implements Plugin<Project> {
                             def fileTree = iterator.next()
                             if(fileTree instanceof DefaultConfigurableFileTree) {
                                 if (fileTree.dir.absolutePath.endsWith("src/main/java")) {  //replace source java dir
-                                    def cleanDirPath = project.buildDir.absolutePath + File.separator + "delogger"
                                     def cleanDir = new File(cleanDirPath)
-                                    cleanDir.mkdirs()
-                                    FileUtils.copyDirectory(fileTree.dir, cleanDir)
+
+                                    if(!hasDoClean) {
+                                        hasDoClean = true
+                                        cleanDir.mkdirs()
+                                        FileUtils.copyDirectory(fileTree.dir, cleanDir)
+                                        doClean(cleanDir, prefixList)
+                                    }
 
                                     fileTree.from(cleanDir)
-
-                                    doClean(cleanDir, prefixList)
                                 }
                             }
                         }
                     }
                 }
+
             }
 
         })

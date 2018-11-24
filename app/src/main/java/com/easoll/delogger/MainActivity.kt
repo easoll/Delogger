@@ -7,7 +7,7 @@ import android.widget.Toast
 
 class MainActivity : AppCompatActivity() {
     companion object {
-        private const val TAG = "MainActivity"
+        const val TAG = "MainActivity_TAG"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

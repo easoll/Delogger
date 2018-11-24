@@ -20,7 +20,8 @@ publish {
     userOrg = 'easoll'
     groupId = 'com.easoll.plugin'
     artifactId = 'delogger'
-    publishVersion = '1.0.1'
-    desc = 'this is a android plugin to clean log'
-    website = 'https://github.com/easoll'
+    publishVersion = '1.0.3'
+    desc = 'This is an android plugin to clean log'
+    website = 'https://github.com/easoll/Delogger'
+    dryRun=false
 }
