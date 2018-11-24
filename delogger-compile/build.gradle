@@ -16,7 +16,7 @@ dependencies{
 }
 
 publish {
-    repoName = 'easoll-android-plugin'
+    repoName = 'android-plugin'
     userOrg = 'easoll'
     groupId = 'com.easoll.plugin'
     artifactId = 'delogger'
