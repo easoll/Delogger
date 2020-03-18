@@ -8,11 +8,11 @@ repositories{
 }
 
 dependencies{
-    compile 'com.android.tools.build:gradle:3.0.1'
-    compile gradleApi()
-    compile localGroovy()
-    compile 'javassist:javassist:3.12.1.GA'
-    compile 'com.blankj:utilcode:1.22.0'
+    implementation 'com.android.tools.build:gradle:3.3.2'
+    implementation gradleApi()
+    implementation localGroovy()
+    implementation 'javassist:javassist:3.12.1.GA'
+    implementation 'com.blankj:utilcode:1.22.0'
 }
 
 publish {
@@ -20,7 +20,7 @@ publish {
     userOrg = 'easoll'
     groupId = 'com.easoll.plugin'
     artifactId = 'delogger'
-    publishVersion = '1.0.3'
+    publishVersion = '1.0.5'
     desc = 'This is an android plugin to clean log'
     website = 'https://github.com/easoll/Delogger'
     dryRun=false

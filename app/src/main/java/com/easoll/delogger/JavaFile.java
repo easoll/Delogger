@@ -9,12 +9,12 @@ public class JavaFile {
 
     public static void sayHello(Context context){
         Log.i(TAG, "log content is " +
-                "name: $name, hello: $hello");
+                "name: $name, hello: $hello java file");
 
-        Log.i(TAG, "log content is " + "name: $name, hello: $hello");
+        Log.i(TAG, "log content is " + "name: $name, hello: $hello java file");
 
         Toast.makeText(context, "$name, $hello", Toast.LENGTH_SHORT).show();
 
-        Delogger.i(TAG, "message from Delogger");
+        Delogger.i(TAG, "message from Delogger java file");
     }
 }

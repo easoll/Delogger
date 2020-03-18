@@ -1,10 +1,12 @@
 package com.android.build.gradle.tasks.factory
 
 import com.android.build.gradle.api.BaseVariant
+import com.android.build.gradle.tasks.AndroidJavaCompile
 import com.android.utils.FileUtils
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.internal.file.DefaultSourceDirectorySet
 import org.gradle.api.internal.file.collections.DefaultConfigurableFileTree
 import org.gradle.api.tasks.SourceTask
 
@@ -41,6 +43,7 @@ class DeloggerPluginImp implements Plugin<Project> {
 
                 //hook kotlin compile
                 Task compileKotlinTask = project.tasks.getByName("compile${variantName}Kotlin")
+                println "============================ get compileKotlinTask"
                 compileKotlinTask.doFirst {
 //                    def clazz_KotlinCompile = Class.forName("org.jetbrains.kotlin.gradle.tasks.KotlinCompile")  // can not find class by Class.forName
                     def clazz_KotlinCompile = compileKotlinTask.class.superclass
@@ -53,25 +56,25 @@ class DeloggerPluginImp implements Plugin<Project> {
                     field_mutableSourceRoots.setAccessible(true)
                     def mutableSourceRoots = (ArrayList<File>)field_mutableSourceRoots.get(sourceRootsContainer)
                     def iterator = mutableSourceRoots.iterator()
+                    def pendingAddSource = new ArrayList<File>()
                     while (iterator.hasNext()){
                         def sourceRoot = iterator.next()
                         if(sourceRoot.absolutePath.endsWith("src/main/java")){
-                            println "============================ kotlin sourceRoot found"
+                            println "============================ kotlin sourceRoot found for kotlin in mutableSourceRoots: $sourceRoot.absolutePath"
                             iterator.remove()
 
-                            def cleanDir = new File(cleanDirPath)
 
                             if(!hasDoClean){
                                 hasDoClean = true
+                                def cleanDir = new File(cleanDirPath)
                                 cleanDir.mkdirs()
                                 FileUtils.copyDirectory(sourceRoot, cleanDir)
                                 doClean(cleanDir, prefixList)
+                                pendingAddSource.add(cleanDir)
                             }
-
-                            mutableSourceRoots.add(cleanDir)
-                            break
                         }
                     }
+                    mutableSourceRoots.addAll(pendingAddSource)
 
                     def field_source = SourceTask.class.getDeclaredField("source")
                     field_source.setAccessible(true)
@@ -82,11 +85,13 @@ class DeloggerPluginImp implements Plugin<Project> {
                         if(singleSource instanceof File){
                             if(singleSource.absolutePath.endsWith("src/main/java")){
                                 iterator.remove()
-                                source.add(new File(cleanDirPath))
-                                break
                             }
+                        } else if(singleSource instanceof DefaultSourceDirectorySet){
+                            iterator.remove()
                         }
                     }
+
+                    source.add(new File(cleanDirPath))
                 }
 
                 //hook javac compile
@@ -95,6 +100,14 @@ class DeloggerPluginImp implements Plugin<Project> {
                     if(compileJavaTask instanceof AndroidJavaCompile){
                         def androidJavaCompile = (AndroidJavaCompile) compileJavaTask
                         println androidJavaCompile.getProcessorListFile()
+
+                        def sourceFileTreesField = AndroidJavaCompile.class.getDeclaredField("sourceFileTrees")
+                        sourceFileTreesField.accessible = true
+                        def originSourceFileTree = sourceFileTreesField.get(androidJavaCompile)
+                        def origin = originSourceFileTree.invoke()
+                        def delegateSourceFileTree = new DelegateSourceFileTree(origin, cleanDirPath)
+
+                        sourceFileTreesField.set(androidJavaCompile, delegateSourceFileTree)
 
                         def sourceField = SourceTask.class.getDeclaredField("source")
                         sourceField.setAccessible(true)
